@@ -1,14 +1,17 @@
 import React, { Component } from 'react';
+import AuthenticationService from "./AuthenticationService";
+
 
 export class FetchData extends Component {
   static displayName = FetchData.name;
+  Auth = new AuthenticationService();
 
   constructor (props) {
     super(props);
     this.state = { forecasts: [], loading: true };
 
-    fetch('api/weather-forecast')
-      .then(response => response.json())
+    this.Auth.fetch('api/weather-forecast')
+      .then(response => response)
       .then(data => {
         this.setState({ forecasts: data, loading: false });
       });
