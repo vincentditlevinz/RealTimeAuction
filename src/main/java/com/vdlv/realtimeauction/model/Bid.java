@@ -1,5 +1,6 @@
-package com.vdlv.realtimeauction.verticles.model;
+package com.vdlv.realtimeauction.model;
 
+import io.vertx.core.shareddata.Shareable;
 import org.apache.commons.lang3.StringUtils;
 
 import java.math.BigDecimal;
@@ -10,7 +11,7 @@ import java.util.Objects;
 /**
  * Represents a bid. It should be associated to an auction (although we haven't enforced it yet through modelling)
  */
-public final class Bid {
+public final class Bid implements Shareable {
   private final String buyer;
   private final BigDecimal price;
   private final ZonedDateTime time;

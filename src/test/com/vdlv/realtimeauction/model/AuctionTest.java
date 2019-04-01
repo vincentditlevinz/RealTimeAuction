@@ -1,4 +1,4 @@
-package com.vdlv.realtimeauction.verticles.model;
+package com.vdlv.realtimeauction.model;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -76,30 +76,50 @@ class AuctionTest {
   @Tag("Unit")
   void addBidLowerThanFirstPriceIsIgnored() {
     Auction auction = new Auction(PRODUCT_TEST_1, BigDecimal.valueOf(100));
-    assertFalse(auction.addBid(new Bid("John Doe", BigDecimal.ZERO)));
+    assertFalse(auction.addBid(new Bid(BUYER_1, BigDecimal.ZERO)));
   }
 
   @Test
   @Tag("Unit")
   void addBidLowerWhenAuctionIsClosedIsIgnored() {
-    Auction auction = new Auction(BigDecimal.valueOf(100), Util.universalNow());
-    assertFalse(auction.addBid(new Bid("John Doe", BigDecimal.valueOf(200))));
+    Auction auction = new Auction(PRODUCT_TEST_1, BigDecimal.valueOf(100), Util.universalNow());
+    assertFalse(auction.addBid(new Bid(BUYER_1, BigDecimal.valueOf(200))));
   }
 
   @Test
   @Tag("Unit")
   void addBidOKIsAccepted() {
-    Auction auction = new Auction(BigDecimal.valueOf(100), Util.universalNow().plus(10, ChronoUnit.MILLIS));
-    Bid bid = new Bid("John Doe", BigDecimal.valueOf(200));
+    Auction auction = new Auction(PRODUCT_TEST_1, BigDecimal.valueOf(100), Util.universalNow().plus(10, ChronoUnit.MILLIS));
+    Bid bid = new Bid(BUYER_1, BigDecimal.valueOf(100));
     assertTrue(auction.addBid(bid));
   }
 
   @Test
   @Tag("Unit")
+  void bidFirstPriceIsAccepted() {
+    Auction auction = new Auction(PRODUCT_TEST_1, BigDecimal.valueOf(100), Util.universalNow().plus(10, ChronoUnit.MILLIS));
+    Bid bid = new Bid(BUYER_1, BigDecimal.valueOf(200));
+    assertTrue(auction.addBid(bid));
+    bid = new Bid(BUYER_1, BigDecimal.valueOf(200));
+  }
+
+  @Test
+  @Tag("Unit")
+  void bidAlreadyBiddedPriceIsRejected() {
+    Auction auction = new Auction(PRODUCT_TEST_1, BigDecimal.valueOf(100), Util.universalNow().plus(10, ChronoUnit.MILLIS));
+    Bid bid = new Bid(BUYER_1, BigDecimal.valueOf(200));
+    assertTrue(auction.addBid(bid));
+    assertFalse(auction.addBid(new Bid(BUYER_2, BigDecimal.valueOf(200))));
+  }
+
+  @Test
+  @Tag("Unit")
   void noBidProcess() throws InterruptedException {
-    Auction auction = new Auction(BigDecimal.valueOf(100), Util.universalNow().plus(10, ChronoUnit.MILLIS));
+    Auction auction = new Auction(PRODUCT_TEST_1, BigDecimal.valueOf(100), Util.universalNow().plus(10, ChronoUnit.MILLIS));
+    assertThat(auction.getCurrentAuctionValue(), is(BigDecimal.valueOf(100)));
     Thread.sleep(20);
     assertTrue(auction.isClosed());
+    assertThat(auction.getCurrentAuctionValue(), is(BigDecimal.valueOf(100)));
     assertThat(auction.andTheWinnerIs(), is(Util.UnluckyAuctionBid.getBuyer()));
     assertThat(auction.getWinningBid().isPresent(), is(false));
   }
@@ -107,7 +127,7 @@ class AuctionTest {
   @Test
   @Tag("Unit")
   void oneBidProcess() throws InterruptedException {
-    Auction auction = new Auction(BigDecimal.valueOf(100), Util.universalNow().plus(10, ChronoUnit.MILLIS));
+    Auction auction = new Auction(PRODUCT_TEST_1, BigDecimal.valueOf(100), Util.universalNow().plus(10, ChronoUnit.MILLIS));
     Bid bid = new Bid(BUYER_1, BigDecimal.valueOf(200));
     assertTrue(auction.addBid(bid));
     Thread.sleep(20);
@@ -119,18 +139,29 @@ class AuctionTest {
   @Test
   @Tag("Unit")
   void multiBidProcess() throws InterruptedException {
-    Auction auction = new Auction(BigDecimal.valueOf(100), Util.universalNow().plus(100, ChronoUnit.MILLIS));
+    Auction auction = new Auction(PRODUCT_TEST_1, BigDecimal.valueOf(100), Util.universalNow().plus(100, ChronoUnit.MILLIS));
+    assertThat(auction.getCurrentAuctionValue(), is(BigDecimal.valueOf(100)));
     assertTrue(auction.addBid(new Bid(BUYER_1, BigDecimal.valueOf(200))));
     assertFalse(auction.addBid(new Bid(BUYER_2, BigDecimal.valueOf(200))));// Not enough
+    assertThat(auction.getCurrentAuctionValue(), is(BigDecimal.valueOf(200)));
+
     assertTrue(auction.addBid(new Bid(BUYER_2, BigDecimal.valueOf(300))));
+    assertThat(auction.getCurrentAuctionValue(), is(BigDecimal.valueOf(300)));
+
     assertTrue(auction.addBid(new Bid(BUYER_1, BigDecimal.valueOf(301))));
+    assertThat(auction.getCurrentAuctionValue(), is(BigDecimal.valueOf(301)));
+
     Bid lastBid = new Bid(BUYER_2, BigDecimal.valueOf(400));
     assertTrue(auction.addBid(lastBid));
+    assertThat(auction.getCurrentAuctionValue(), is(BigDecimal.valueOf(400)));
+
 
     Thread.sleep(100);
     assertTrue(auction.isClosed());
     assertThat(auction.andTheWinnerIs(), is(BUYER_2));
     assertThat(auction.getWinningBid().get(), is(lastBid));
+    assertThat(auction.getCurrentAuctionValue(), is(BigDecimal.valueOf(400)));
+
   }
 
 }

@@ -1,4 +1,4 @@
-package com.vdlv.realtimeauction.verticles.model;
+package com.vdlv.realtimeauction.model;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;

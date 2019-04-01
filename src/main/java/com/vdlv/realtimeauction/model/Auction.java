@@ -1,5 +1,6 @@
-package com.vdlv.realtimeauction.verticles.model;
+package com.vdlv.realtimeauction.model;
 
+import io.vertx.core.shareddata.Shareable;
 import org.apache.commons.lang3.StringUtils;
 
 import java.math.BigDecimal;
@@ -12,7 +13,7 @@ import java.util.UUID;
 /**
  * Represents an auction in this system.
  */
-public final class Auction {
+public final class Auction implements Shareable {
   private final String id;
   private final String product;
   private ZonedDateTime endingTime;
@@ -32,12 +33,27 @@ public final class Auction {
    * @throws IllegalArgumentException if product is null or empty (should not happen)
    */
   public Auction(String product, BigDecimal firstPrice) {
+    this(product, firstPrice, Util.universalNow().plusMinutes(5));
+  }
+
+  /**
+   * Create a new Auction from a technical <b>and business</b> point of view.
+   * <ul>Several business rules are applied internally:
+   * <li>An id is automatically affected to this auction</li>
+   * <li>The first price is automatically set to 0 if the provided value is null or negative</li>
+   * </ul>
+   *
+   * @param product    a description of the product
+   * @param firstPrice the first price for this sell
+   * @param endingTime the time when the auction will be closed
+   */
+  public Auction(String product, BigDecimal firstPrice, ZonedDateTime endingTime) {
     this.id = UUID.randomUUID().toString();
     this.product = product;
     if (StringUtils.isBlank(product)) {
       throw new IllegalArgumentException(("Product description should not ne null or empty"));
     }
-    this.endingTime = Util.universalNow().plusMinutes(5);
+    this.endingTime = endingTime;
     if (firstPrice == null || BigDecimal.ZERO.compareTo(firstPrice) == 1) {
       this.firstPrice = BigDecimal.ZERO;
     } else {
@@ -47,14 +63,19 @@ public final class Auction {
   }
 
   /**
-   * For testing purpose only
-   *
-   * @param firstPrice
+   * A full ctor that is used for {@link Shareable#copy()}
+   * @param id
+   * @param product
    * @param endingTime
+   * @param firstPrice
+   * @param bids
    */
-  Auction(BigDecimal firstPrice, ZonedDateTime endingTime) {
-    this("PRODUCT_FRO_TEST", firstPrice);
+  private Auction(String id, String product, ZonedDateTime endingTime, BigDecimal firstPrice, ArrayDeque<Bid> bids) {
+    this.id = id;
+    this.product = product;
     this.endingTime = endingTime;
+    this.firstPrice = firstPrice;
+    this.bids = bids;
   }
 
   /**
@@ -110,14 +131,18 @@ public final class Auction {
     return isClosed(Util.universalNow());
   }
 
+  public boolean isOpen() {
+    return !isClosed();
+  }
+
 
   /**
    * Add a bid to this auction if is still possible.
    * A bid is acceptable if it is not null, not outdated (see {@link #isBidOutdated})
    * and corresponds to the best price (see {@link #isTheBestPrice}).
-   * A bid is recordable if one can perist it in the store.
+   * A bid is recordable if one can persist it in the store.
    *
-   * @param bid
+   * @param bid a provided bid
    * @return true if the bid is accepted (acceptable and recordable)
    */
   public boolean addBid(Bid bid) {
@@ -129,10 +154,21 @@ public final class Auction {
   }
 
   /**
+   * @return the value of the auction 'now'
+   */
+  public BigDecimal getCurrentAuctionValue() {
+    if (bids.isEmpty()) {
+      return firstPrice;
+    } else {
+      return bids.peekLast().getPrice();
+    }
+  }
+
+  /**
    * Checks if the bid is outdated (it was made after the auction end time)
    *
-   * @param bid
-   * @return
+   * @param bid a provided bid
+   * @return true if the bid is outdated false otherwise
    */
   public boolean isBidOutdated(Bid bid) {
     return isClosed(bid.getTime());
@@ -141,16 +177,16 @@ public final class Auction {
   /**
    * Checks if the bid's price is the best one.
    * <ul>Different possible cases:
-   * <li>It is the first bid, then the bid's price should be higer than the first price associated to the auction</li>
-   * <li>Other bids have been made, then the bid's price must be higher thant the last bid already recorded</li>
+   * <li>It is the first bid, then the bid's price should be higher than or equals to the first price associated to the auction</li>
+   * <li>Other bids have been made, then the bid's price must be higher than the last bid already recorded</li>
    * </ul>
    *
-   * @param bid
-   * @return
+   * @param bid a provided bid
+   * @return true if the bid win false otherwise
    */
   public boolean isTheBestPrice(Bid bid) {
     if (bids.isEmpty()) {
-      return bid.getPrice().compareTo(getFirstPrice()) == 1;
+      return bid.getPrice().compareTo(getFirstPrice()) >= 0;// can be equal to the first price
     } else {
       final BigDecimal currentBestPrice = bids.peekLast().getPrice();
       return bid.getPrice().compareTo(currentBestPrice) == 1;
@@ -180,5 +216,10 @@ public final class Auction {
       ", endingTime=" + endingTime +
       ", firstPrice=" + firstPrice +
       '}';
+  }
+
+  @Override
+  public Shareable copy() {
+    return new Auction(id, product, endingTime, firstPrice, bids.clone());// A Bid object is immutable, thus cloning should be OK
   }
 }

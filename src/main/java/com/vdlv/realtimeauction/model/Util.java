@@ -1,4 +1,4 @@
-package com.vdlv.realtimeauction.verticles.model;
+package com.vdlv.realtimeauction.model;
 
 import java.math.BigDecimal;
 import java.time.ZoneOffset;
@@ -10,6 +10,11 @@ public interface Util {
    */
   Bid UnluckyAuctionBid = new Bid("This auction didn't find any buyer, we are sorry for that", BigDecimal.ZERO);
 
+  /**
+   * One should worry about time with an auction system that may run world wild
+   *
+   * @return 'now' according to UTC time zone offset
+   */
   static ZonedDateTime universalNow() {
     return ZonedDateTime.now(ZoneOffset.UTC);
   }
