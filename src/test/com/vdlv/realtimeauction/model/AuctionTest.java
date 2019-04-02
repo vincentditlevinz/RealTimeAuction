@@ -6,6 +6,9 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import static org.exparity.hamcrest.date.ZonedDateTimeMatchers.within;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -156,12 +159,22 @@ class AuctionTest {
     assertThat(auction.getCurrentAuctionValue(), is(BigDecimal.valueOf(400)));
 
 
-    Thread.sleep(100);
+    Thread.sleep(110);
     assertTrue(auction.isClosed());
     assertThat(auction.andTheWinnerIs(), is(BUYER_2));
     assertThat(auction.getWinningBid().get(), is(lastBid));
     assertThat(auction.getCurrentAuctionValue(), is(BigDecimal.valueOf(400)));
 
+  }
+
+  @Test
+  @Tag("Unit")
+  void auctionOrdering() throws InterruptedException {
+    List<Auction> auctions = Arrays.asList(new Auction(PRODUCT_TEST_1 + ".1", BigDecimal.valueOf(100), Util.universalNow().plus(100, ChronoUnit.MILLIS)), new Auction(PRODUCT_TEST_1 + ".2", BigDecimal.valueOf(100)), new Auction(PRODUCT_TEST_1 + ".3", BigDecimal.valueOf(100), Util.universalNow().minus(100, ChronoUnit.MILLIS)));
+    Collections.sort(auctions);
+    assertThat(auctions.get(0).getProduct(), is(PRODUCT_TEST_1 + ".2"));
+    assertThat(auctions.get(1).getProduct(), is(PRODUCT_TEST_1 + ".1"));
+    assertThat(auctions.get(2).getProduct(), is(PRODUCT_TEST_1 + ".3"));
   }
 
 }

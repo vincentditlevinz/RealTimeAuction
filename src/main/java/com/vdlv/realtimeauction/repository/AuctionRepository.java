@@ -5,10 +5,7 @@ import com.vdlv.realtimeauction.model.Bid;
 import io.vertx.core.Vertx;
 import io.vertx.core.shareddata.SharedData;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 import static java.util.stream.Collectors.toList;
 
@@ -29,24 +26,30 @@ public class AuctionRepository {
   }
 
   /**
+   * @param offset skip offset lines
+   * @param max max item per page
    * @return the auctions that are still open
    */
-  public List<Auction> findOpenAuctions() {
-    return auctionStorage().values().stream().filter(Auction::isOpen).collect(toList());
+  public List<Auction> findOpenAuctions(Integer offset, Integer max) {
+    return extractResults(auctionStorage().values().stream().filter(Auction::isOpen).collect(toList()), offset, max);
   }
 
   /**
+   * @param offset skip offset lines
+   * @param max max item per page
    * @return the auctions that are closed
    */
-  public List<Auction> findClosedAuctions() {
-    return auctionStorage().values().stream().filter(Auction::isOpen).collect(toList());
+  public List<Auction> findClosedAuctions(Integer offset, Integer max) {
+    return extractResults(auctionStorage().values().stream().filter(Auction::isClosed).collect(toList()), offset, max);
   }
 
   /**
+   * @param offset skip offset lines
+   * @param max max item per page
    * @return all actions
    */
-  public List<Auction> findAuctions() {
-    return new ArrayList<>(auctionStorage().values());
+  public List<Auction> findAuctions(Integer offset, Integer max) {
+    return extractResults(new ArrayList<>(auctionStorage().values()), offset, max);
   }
 
   /**
@@ -83,6 +86,51 @@ public class AuctionRepository {
       return returnValue;// is correctly added
     } else {
       return false;// the auction does not exists
+    }
+  }
+
+  /**
+   * Handle pagination
+   *
+   * @param result
+   * @param offset
+   * @param max
+   * @return extracted results
+   */
+  static List<Auction> extractResults(List<Auction> result, Integer offset, Integer max) {
+    int checkedMax = checkMax(max, result.size());
+    int checkedOffset = checkOffset(offset, checkedMax, result.size());
+    Collections.sort(result);
+    int idEnd = checkedOffset + checkedMax;
+    if (idEnd > result.size()) {
+      idEnd = result.size();
+    }
+    return result.subList(checkedOffset, idEnd);
+  }
+
+  static int checkMax(int max, int listSize) {
+    if (max <= 0) {
+      return 10 > listSize ? listSize : 10;
+    } else if (max > 100) {
+      return 100 > listSize ? listSize : 100;
+    } else {
+      return max > listSize ? listSize : max;
+    }
+  }
+
+  static int checkOffset(int offset, int checkedMax, int listSize) {
+    if (offset <= 0) {
+      return 0;
+    } else {
+      if (offset >= listSize) {
+        int newOffset = Math.round(listSize / checkedMax) * checkedMax;
+        if (newOffset == listSize) {
+          newOffset -= checkedMax;
+        }
+        return newOffset;
+      } else {
+        return offset;
+      }
     }
   }
 }

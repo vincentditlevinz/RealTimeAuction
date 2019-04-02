@@ -1,7 +1,9 @@
 package com.vdlv.realtimeauction.verticles;
 
 import com.vdlv.realtimeauction.WeatherAPI;
+import com.vdlv.realtimeauction.handlers.AuctionHandler;
 import com.vdlv.realtimeauction.handlers.LoginHandler;
+import com.vdlv.realtimeauction.repository.AuctionRepository;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.AuthProvider;
@@ -12,10 +14,9 @@ import io.vertx.ext.auth.shiro.ShiroAuth;
 import io.vertx.ext.auth.shiro.ShiroAuthOptions;
 import io.vertx.ext.auth.shiro.ShiroAuthRealmType;
 import io.vertx.ext.web.Router;
-import io.vertx.ext.web.handler.ErrorHandler;
-import io.vertx.ext.web.handler.FaviconHandler;
-import io.vertx.ext.web.handler.JWTAuthHandler;
-import io.vertx.ext.web.handler.StaticHandler;
+import io.vertx.ext.web.api.validation.HTTPRequestValidationHandler;
+import io.vertx.ext.web.api.validation.ParameterType;
+import io.vertx.ext.web.handler.*;
 import xyz.jetdrone.vertx.spa.services.SPA;
 
 /**
@@ -39,6 +40,17 @@ public class FrontEndVerticle extends AbstractVerticle {
       .get("/api/weather-forecast")
       .handler(WeatherAPI.get())
       .failureHandler(ErrorHandler.create("error-template.html", true));
+
+
+    AuctionHandler ah = new AuctionHandler(new AuctionRepository(vertx));
+    HTTPRequestValidationHandler search = HTTPRequestValidationHandler.create()
+      .addQueryParam("closed", ParameterType.BOOL, false)
+      .addQueryParam("offset", ParameterType.INT, true)
+      .addQueryParam("max", ParameterType.INT, true);
+
+    router.get("/api/auctions").handler(search);
+    router.route("/api/auctions/*").handler(BodyHandler.create())
+      .handler(ah::handleGetAuctions);
 
     builder
       .publishSPAApplication()

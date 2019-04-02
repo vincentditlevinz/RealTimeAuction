@@ -46,6 +46,10 @@
       <artifactId>vertx-auth-shiro</artifactId>
     </dependency>
     <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-web-api-contract</artifactId>
+    </dependency>
+    <dependency>
       <groupId>xyz.jetdrone</groupId>
       <artifactId>vertx-spa-services</artifactId>
       <version>0.0.1</version>

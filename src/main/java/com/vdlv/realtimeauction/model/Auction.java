@@ -13,7 +13,7 @@ import java.util.UUID;
 /**
  * Represents an auction in this system.
  */
-public final class Auction implements Shareable {
+public final class Auction implements Shareable, Comparable<Auction> {
   private final String id;
   private final String product;
   private ZonedDateTime endingTime;
@@ -64,6 +64,7 @@ public final class Auction implements Shareable {
 
   /**
    * A full ctor that is used for {@link Shareable#copy()}
+   *
    * @param id
    * @param product
    * @param endingTime
@@ -221,5 +222,13 @@ public final class Auction implements Shareable {
   @Override
   public Shareable copy() {
     return new Auction(id, product, endingTime, firstPrice, bids.clone());// A Bid object is immutable, thus cloning should be OK
+  }
+
+  @Override
+  public int compareTo(Auction auction) {// a useful default ordering from the most recent to the oldest
+    if (auction == null) {
+      throw new NullPointerException("Provided auction object could not be null according to the specification.");
+    }
+    return -getEndingTime().compareTo(auction.getEndingTime());
   }
 }
