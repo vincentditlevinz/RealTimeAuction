@@ -107,8 +107,18 @@ public final class Auction implements Shareable, Comparable<Auction> {
     return firstPrice;
   }
 
+  /**
+   * @return the buyer when the auction is closed
+   */
   public String andTheWinnerIs() {
     return getWinningBid().orElse(Util.UnluckyAuctionBid).getBuyer();
+  }
+
+  /**
+   * @return the current buyer
+   */
+  public String getCurrentBuyer() {
+    return Optional.ofNullable(bids.peekLast()).orElse(Util.UnluckyAuctionBid).getBuyer();
   }
 
   /**

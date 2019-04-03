@@ -8,7 +8,7 @@ public interface Util {
   /**
    * Represent a fictive Bid used when an auction didn't find any buyer.
    */
-  Bid UnluckyAuctionBid = new Bid("This auction didn't find any buyer, we are sorry for that", BigDecimal.ZERO);
+  Bid UnluckyAuctionBid = new Bid("May be you!", BigDecimal.ZERO);
 
   /**
    * One should worry about time with an auction system that may run world wild

@@ -20,6 +20,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.util.Map;
+
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -118,7 +120,24 @@ class FrontEndVerticleTest {
   }
 
   @Test
-  void getAuctions(Vertx vertx, VertxTestContext testContext) {
+  void getAllAuctions(Vertx vertx, VertxTestContext testContext) {
+    String token = authenticate("martin", "test123");
+    WebClient webClient = WebClient.create(vertx);
+    webClient.get(8080, "localhost", "/api/auctions")
+      .addQueryParam("offset", "0")
+      .addQueryParam("max", "10")
+      .bearerTokenAuthentication(token)
+      .send(testContext.succeeding(response -> testContext.verify(() -> {
+        assertThat(response.statusCode(), is(200));
+        JsonArray result = response.bodyAsJsonArray();
+        assertThat(result.size(), is(4));
+        logger.info("Result from http request:" + result);
+        testContext.completeNow();
+      })));
+  }
+
+  @Test
+  void getOpenAuctions(Vertx vertx, VertxTestContext testContext) {
     String token = authenticate("martin", "test123");
     WebClient webClient = WebClient.create(vertx);
     webClient.get(8080, "localhost", "/api/auctions")
@@ -130,7 +149,41 @@ class FrontEndVerticleTest {
         assertThat(response.statusCode(), is(200));
         JsonArray result = response.bodyAsJsonArray();
         assertThat(result.size(), is(4));
-        logger.info("Result from http request:" + result);
+        testContext.completeNow();
+      })));
+  }
+
+  @Test
+  void getClosedAuctions(Vertx vertx, VertxTestContext testContext) {
+    String token = authenticate("martin", "test123");
+    WebClient webClient = WebClient.create(vertx);
+    webClient.get(8080, "localhost", "/api/auctions")
+      .addQueryParam("offset", "0")
+      .addQueryParam("max", "10")
+      .addQueryParam("closed", "true")
+      .bearerTokenAuthentication(token)
+      .send(testContext.succeeding(response -> testContext.verify(() -> {
+        assertThat(response.statusCode(), is(200));
+        JsonArray result = response.bodyAsJsonArray();
+        assertThat(result.isEmpty(), is(true));
+        testContext.completeNow();
+      })));
+  }
+
+  @Test
+  void bidForAnAuction(Vertx vertx, VertxTestContext testContext) {
+    String token = authenticate("martin", "test123");
+    JsonArray auctions = auctions(false, token);
+    JsonObject auction = auctions.getJsonObject(0);
+
+    WebClient webClient = WebClient.create(vertx);
+    webClient.patch(8080, "localhost", "/api/bid/" + auction.getString("id"))
+      .bearerTokenAuthentication(token)
+      .sendJsonObject(new JsonObject().put("price", 10000.0), testContext.succeeding(response -> testContext.verify(() -> {
+        assertThat(response.statusCode(), is(200));
+        JsonObject body = response.bodyAsJsonObject();
+        assertThat(body.getDouble("price"), is(10000.0));
+        assertThat(body.getString("buyer"), is("martin"));
         testContext.completeNow();
       })));
   }
@@ -153,9 +206,33 @@ class FrontEndVerticleTest {
         when().
         post("/login").
         then().
+        statusCode(200).
         body("authenticated", equalTo(true)).
         extract().
         response();
     return response.body().jsonPath().getString("token");
+  }
+
+  JsonArray auctions(boolean closed, String token) {
+    Response response =
+      given().
+        queryParam("offset", "0").
+        queryParam("max", "10").
+        queryParam("closed", closed).
+        auth().oauth2(token).
+        with().
+        contentType(ContentType.JSON).
+        when().
+        get("/api/auctions").
+        then().
+        statusCode(200).
+        extract().
+        response();
+    JsonArray result = new JsonArray();
+    response.body().jsonPath().getList("").forEach(item -> {
+      JsonObject itemAsJson = new JsonObject((Map) item);
+      result.add(itemAsJson);
+    });
+    return result;
   }
 }

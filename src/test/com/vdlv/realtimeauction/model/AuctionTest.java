@@ -103,7 +103,6 @@ class AuctionTest {
     Auction auction = new Auction(PRODUCT_TEST_1, BigDecimal.valueOf(100), Util.universalNow().plus(10, ChronoUnit.MILLIS));
     Bid bid = new Bid(BUYER_1, BigDecimal.valueOf(200));
     assertTrue(auction.addBid(bid));
-    bid = new Bid(BUYER_1, BigDecimal.valueOf(200));
   }
 
   @Test
@@ -133,9 +132,12 @@ class AuctionTest {
     Auction auction = new Auction(PRODUCT_TEST_1, BigDecimal.valueOf(100), Util.universalNow().plus(10, ChronoUnit.MILLIS));
     Bid bid = new Bid(BUYER_1, BigDecimal.valueOf(200));
     assertTrue(auction.addBid(bid));
+    assertThat(auction.andTheWinnerIs(), is(Util.UnluckyAuctionBid.getBuyer()));// auction is not closed yet
+    assertThat(auction.getCurrentBuyer(), is(BUYER_1));
     Thread.sleep(20);
     assertTrue(auction.isClosed());
     assertThat(auction.andTheWinnerIs(), is(BUYER_1));
+    assertThat(auction.getCurrentBuyer(), is(BUYER_1));
     assertThat(auction.getWinningBid().get(), is(bid));
   }
 
@@ -169,7 +171,7 @@ class AuctionTest {
 
   @Test
   @Tag("Unit")
-  void auctionOrdering() throws InterruptedException {
+  void auctionOrdering() {
     List<Auction> auctions = Arrays.asList(new Auction(PRODUCT_TEST_1 + ".1", BigDecimal.valueOf(100), Util.universalNow().plus(100, ChronoUnit.MILLIS)), new Auction(PRODUCT_TEST_1 + ".2", BigDecimal.valueOf(100)), new Auction(PRODUCT_TEST_1 + ".3", BigDecimal.valueOf(100), Util.universalNow().minus(100, ChronoUnit.MILLIS)));
     Collections.sort(auctions);
     assertThat(auctions.get(0).getProduct(), is(PRODUCT_TEST_1 + ".2"));

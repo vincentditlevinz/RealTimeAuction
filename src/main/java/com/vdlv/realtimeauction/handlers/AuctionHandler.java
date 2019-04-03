@@ -3,7 +3,6 @@ package com.vdlv.realtimeauction.handlers;
 import com.vdlv.realtimeauction.model.Auction;
 import com.vdlv.realtimeauction.model.Bid;
 import com.vdlv.realtimeauction.repository.AuctionRepository;
-import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
@@ -14,6 +13,9 @@ import io.vertx.ext.web.api.RequestParameters;
 import java.math.BigDecimal;
 import java.util.List;
 
+import static io.vertx.core.http.HttpHeaders.CONTENT_TYPE;
+import static io.vertx.core.http.HttpHeaders.createOptimized;
+
 public class AuctionHandler {
   private final AuctionRepository repository;
   private final static Logger logger = LoggerFactory.getLogger(AuctionHandler.class.getName());
@@ -22,6 +24,12 @@ public class AuctionHandler {
     this.repository = repository;
   }
 
+  /**
+   * Retrieves auctions stored in the backend according to http parameters (closed, offset and max)
+   * The result is sent as a Json array of Json objects containing the auction id, product, price and ending time.
+   *
+   * @param context the routing context
+   */
   public void handleGetAuctions(RoutingContext context) {
     RequestParameters params = context.get("parsedParameters");
 
@@ -56,31 +64,50 @@ public class AuctionHandler {
     if (logger.isDebugEnabled())
       logger.debug("Result:" + result);
     final JsonArray resp = new JsonArray();
-    result.stream().forEach(item -> {
-      resp.add(new JsonObject().
-        put("id", item.getId()).
-        put("product", item.getProduct()).
-        put("price", item.getCurrentAuctionValue().doubleValue()).
-        put("ending", item.getEndingTime().toString()));
-    });
+    result.forEach(item -> resp.add(convert(item)));
     context.response()
-      .putHeader(HttpHeaders.CONTENT_TYPE, HttpHeaders.createOptimized("application/json"))
+      .putHeader(CONTENT_TYPE, createOptimized("application/json"))
       .setStatusCode(200)
-      .end(resp.encodePrettily());
+      .end(resp.encode());
   }
 
+  /**
+   * Record a bid for an auction. The auction is identified by a path parameter, the bid price is specified through a Json
+   * request body and the user is identified thanks to the JWT token.
+   * @param context the routing context
+   */
   public void handleBidForAuction(RoutingContext context) {
     RequestParameters params = context.get("parsedParameters");
 
     String auctionId = params.pathParameter("auctionId").getString();
-    JsonObject bid = params.body().getJsonObject();
+    JsonObject bid = context.getBodyAsJson();
+
+    if (logger.isDebugEnabled()) {
+      logger.debug("Params: auctionId=" + auctionId + ", price=" + bid.getDouble("price"));
+      logger.debug("User: " + context.user().principal().getString("sub"));
+    }
 
     repository.recordABid(auctionId, new Bid(context.user().principal().getString("sub"), BigDecimal.valueOf(bid.getDouble("price"))));
-
+    Auction updatedAuction = repository.findAuctionById(auctionId).get();
     context.response()
-      .putHeader("content-type", "application/json")
+      .putHeader(CONTENT_TYPE, createOptimized("application/json"))
       .setStatusCode(200)
-      .end();
+      .end(convert(updatedAuction).encode());
+  }
+
+  /**
+   * Convert an auction to a JsonObject
+   *
+   * @param auction the auction to convert
+   * @return the JsonObject
+   */
+  private static JsonObject convert(Auction auction) {
+    return new JsonObject().
+      put("id", auction.getId()).
+      put("product", auction.getProduct()).
+      put("price", auction.getCurrentAuctionValue().doubleValue()).
+      put("ending", auction.getEndingTime().toString()).
+      put("buyer", auction.getCurrentBuyer());
   }
 
 

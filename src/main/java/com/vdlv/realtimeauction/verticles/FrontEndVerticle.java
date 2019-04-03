@@ -56,7 +56,8 @@ public class FrontEndVerticle extends AbstractVerticle {
 
     router.route("/api/bid/*").handler(BodyHandler.create());
     HTTPRequestValidationHandler patch = HTTPRequestValidationHandler.create()
-      .addExpectedContentType("application/json");
+      .addExpectedContentType("application/json")
+      .addPathParam("auctionId", ParameterType.GENERIC_STRING);
 
     router.patch("/api/bid/:auctionId")
       .handler(patch)
