@@ -4,7 +4,7 @@ import com.vdlv.realtimeauction.model.Auction;
 import com.vdlv.realtimeauction.model.Bid;
 import com.vdlv.realtimeauction.repository.AuctionRepository;
 import io.vertx.core.http.HttpHeaders;
-import io.vertx.core.json.Json;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -55,10 +55,18 @@ public class AuctionHandler {
     }
     if (logger.isDebugEnabled())
       logger.debug("Result:" + result);
+    final JsonArray resp = new JsonArray();
+    result.stream().forEach(item -> {
+      resp.add(new JsonObject().
+        put("id", item.getId()).
+        put("product", item.getProduct()).
+        put("price", item.getCurrentAuctionValue().doubleValue()).
+        put("ending", item.getEndingTime().toString()));
+    });
     context.response()
       .putHeader(HttpHeaders.CONTENT_TYPE, HttpHeaders.createOptimized("application/json"))
       .setStatusCode(200)
-      .end(Json.encodePrettily(result));
+      .end(resp.encodePrettily());
   }
 
   public void handleBidForAuction(RoutingContext context) {

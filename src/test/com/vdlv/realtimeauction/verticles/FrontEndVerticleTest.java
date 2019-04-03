@@ -1,14 +1,21 @@
 package com.vdlv.realtimeauction.verticles;
 
+import com.vdlv.realtimeauction.repository.AuctionRepository;
 import io.github.glytching.junit.extension.system.SystemProperty;
 import io.github.glytching.junit.extension.system.SystemPropertyExtension;
+import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,16 +28,45 @@ import static org.hamcrest.Matchers.*;
 @ExtendWith({VertxExtension.class, SystemPropertyExtension.class})
 @SystemProperty(name = "vertx.environment", value = "JUNIT")
 class FrontEndVerticleTest {
+  private final static Logger logger = LoggerFactory.getLogger(FrontEndVerticleTest.class.getName());
+
+  @BeforeAll
+  public static void configureRestAssured() {
+    RestAssured.baseURI = "http://localhost";
+    RestAssured.port = Integer.getInteger("http.port", 8080);
+  }
+
+  @AfterAll
+  public static void unconfigureRestAssured() {
+    RestAssured.reset();
+  }
 
   @BeforeEach
   void init(Vertx vertx, VertxTestContext testContext) {
-    vertx.deployVerticle(new FrontEndVerticle(), testContext.completing());
+    vertx.deployVerticle(new FrontEndVerticle(), testContext.succeeding(ar -> {
+      wait(50);// ensure server is really really started (we had sometimes connection refused messages)
+      testContext.completeNow();
+    }));
+    AuctionManagementVerticle.initializeAuctions(new AuctionRepository(vertx));
+  }
+
+  /**
+   * Pause current thread
+   *
+   * @param millis pause duration in millis
+   */
+  private void wait(int millis) {
+    try {
+      Thread.sleep(millis);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+    }
   }
 
   @Test
   void getAuctions_ExpiredTokenTest(Vertx vertx, VertxTestContext testContext) {
-    WebClient client = WebClient.create(vertx);
-    client.get(8080, "localhost", "/api/auctions")
+    WebClient webClient = WebClient.create(vertx);
+    webClient.get(8080, "localhost", "/api/auctions")
       .addQueryParam("offset", "0")
       .addQueryParam("max", "10")
       .addQueryParam("closed", "false")
@@ -44,22 +80,23 @@ class FrontEndVerticleTest {
 
   @Test
   void getAuctions_NoTokenTest(Vertx vertx, VertxTestContext testContext) {
-    WebClient client = WebClient.create(vertx);
-    client.get(8080, "localhost", "/api/auctions")
+    WebClient webClient = WebClient.create(vertx);
+    webClient.get(8080, "localhost", "/api/auctions")
       .addQueryParam("offset", "0")
       .addQueryParam("max", "10")
       .addQueryParam("closed", "false")
       .send(testContext.succeeding(response -> testContext.verify(() -> {
         assertThat(response.statusCode(), is(401));
         assertThat(response.statusMessage(), is("Unauthorized"));
+        webClient.close();
         testContext.completeNow();
       })));
   }
 
   @Test
   void authentication_WrongCredentialsTest(Vertx vertx, VertxTestContext testContext) {
-    WebClient client = WebClient.create(vertx);
-    client.get(8080, "localhost", "/login")
+    WebClient webClient = WebClient.create(vertx);
+    webClient.get(8080, "localhost", "/login")
       .sendJsonObject(new JsonObject().put("username", "martin").put("password", "wrongPassword"), testContext.succeeding(response -> testContext.verify(() -> {
         assertThat(response.statusCode(), is(401));
         assertThat(response.statusMessage(), is("Unauthorized"));
@@ -69,8 +106,8 @@ class FrontEndVerticleTest {
 
   @Test
   void authentication_ValidCredentialsTest(Vertx vertx, VertxTestContext testContext) {
-    WebClient client = WebClient.create(vertx);
-    client.post(8080, "localhost", "/login")
+    WebClient webClient = WebClient.create(vertx);
+    webClient.post(8080, "localhost", "/login")
       .sendJsonObject(new JsonObject().put("username", "martin").put("password", "test123"), testContext.succeeding(response -> testContext.verify(() -> {
         assertThat(response.statusCode(), is(200));
         JsonObject result = response.bodyAsJsonObject();
@@ -83,15 +120,17 @@ class FrontEndVerticleTest {
   @Test
   void getAuctions(Vertx vertx, VertxTestContext testContext) {
     String token = authenticate("martin", "test123");
-    System.err.println(token);
-    WebClient client = WebClient.create(vertx);
-    client.get(8080, "localhost", "/api/auctions")
+    WebClient webClient = WebClient.create(vertx);
+    webClient.get(8080, "localhost", "/api/auctions")
       .addQueryParam("offset", "0")
       .addQueryParam("max", "10")
       .addQueryParam("closed", "false")
       .bearerTokenAuthentication(token)
       .send(testContext.succeeding(response -> testContext.verify(() -> {
         assertThat(response.statusCode(), is(200));
+        JsonArray result = response.bodyAsJsonArray();
+        assertThat(result.size(), is(4));
+        logger.info("Result from http request:" + result);
         testContext.completeNow();
       })));
   }

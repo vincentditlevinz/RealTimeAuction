@@ -28,15 +28,19 @@ public class AuctionManagementVerticle extends AbstractVerticle {
   @Override
   public void start() {
     AuctionRepository repository = new AuctionRepository(vertx);
-    for (int i = 0; i < 4; i++) {
-      Auction auction = repository.upsertAuction(new Auction(catalog.get(i), prices.get(i)));
-      logger.info("Inserting auction: " + auction);
-    }
+    initializeAuctions(repository);
     vertx.setPeriodic(Util.auctionValidityInMinutes() * 30000, id -> {
       int i = ThreadLocalRandom.current().nextInt(0, 4);
       Auction auction = repository.upsertAuction(new Auction(catalog.get(i), prices.get(i)));
       logger.info("Inserting auction: " + auction);
     });
+  }
+
+  public static void initializeAuctions(AuctionRepository repository) {
+    for (int i = 0; i < 4; i++) {
+      Auction auction = repository.upsertAuction(new Auction(catalog.get(i), prices.get(i)));
+      logger.info("Inserting auction: " + auction);
+    }
   }
 }
 
