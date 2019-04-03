@@ -1,11 +1,14 @@
 package com.vdlv.realtimeauction.verticles;
 
-import com.vdlv.realtimeauction.WeatherAPI;
 import com.vdlv.realtimeauction.handlers.AuctionHandler;
 import com.vdlv.realtimeauction.handlers.LoginHandler;
+import com.vdlv.realtimeauction.handlers.ValidationFailureHandler;
 import com.vdlv.realtimeauction.repository.AuctionRepository;
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.auth.AuthProvider;
 import io.vertx.ext.auth.KeyStoreOptions;
 import io.vertx.ext.auth.jwt.JWTAuth;
@@ -16,7 +19,10 @@ import io.vertx.ext.auth.shiro.ShiroAuthRealmType;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.api.validation.HTTPRequestValidationHandler;
 import io.vertx.ext.web.api.validation.ParameterType;
-import io.vertx.ext.web.handler.*;
+import io.vertx.ext.web.handler.BodyHandler;
+import io.vertx.ext.web.handler.FaviconHandler;
+import io.vertx.ext.web.handler.JWTAuthHandler;
+import io.vertx.ext.web.handler.StaticHandler;
 import xyz.jetdrone.vertx.spa.services.SPA;
 
 /**
@@ -25,22 +31,16 @@ import xyz.jetdrone.vertx.spa.services.SPA;
  * @author vim
  */
 public class FrontEndVerticle extends AbstractVerticle {
+  private final static Logger logger = LoggerFactory.getLogger(FrontEndVerticle.class.getName());
 
   @Override
   public void start() {
     final Router router = Router.router(vertx);
 
     final Builder builder = new Builder(router);
-    builder.setupAuthenticationEndpoint()
+    builder
+      .setupAuthenticationEndpoint()
       .protectAPIEndpoints();
-
-
-    // mount the weather API
-    router
-      .get("/api/weather-forecast")
-      .handler(WeatherAPI.get())
-      .failureHandler(ErrorHandler.create("error-template.html", true));
-
 
     AuctionHandler ah = new AuctionHandler(new AuctionRepository(vertx));
     HTTPRequestValidationHandler search = HTTPRequestValidationHandler.create()
@@ -48,9 +48,20 @@ public class FrontEndVerticle extends AbstractVerticle {
       .addQueryParam("offset", ParameterType.INT, true)
       .addQueryParam("max", ParameterType.INT, true);
 
-    router.get("/api/auctions").handler(search);
-    router.route("/api/auctions/*").handler(BodyHandler.create())
-      .handler(ah::handleGetAuctions);
+
+    router.get("/api/auctions")
+      .handler(search)
+      .handler(ah::handleGetAuctions)
+      .failureHandler(ValidationFailureHandler.create());
+
+    router.route("/api/bid/*").handler(BodyHandler.create());
+    HTTPRequestValidationHandler patch = HTTPRequestValidationHandler.create()
+      .addExpectedContentType("application/json");
+
+    router.patch("/api/bid/:auctionId")
+      .handler(patch)
+      .handler(ah::handleBidForAuction)
+      .failureHandler(ValidationFailureHandler.create());
 
     builder
       .publishSPAApplication()
@@ -61,7 +72,7 @@ public class FrontEndVerticle extends AbstractVerticle {
   @Override
   public void stop() {
     // will stop any SPA running processes in DEV mode
-    SPA.stop();
+    //SPA.stop();
   }
 
   /**
@@ -79,7 +90,16 @@ public class FrontEndVerticle extends AbstractVerticle {
         vertx,
         new ShiroAuthOptions().setType(ShiroAuthRealmType.PROPERTIES).setConfig(new JsonObject())
       );
-      router.route("/login").handler(LoginHandler.create(shiroAuthProvider));
+      router.route("/login").handler(LoginHandler.create(shiroAuthProvider)).failureHandler(context -> {
+        if (logger.isDebugEnabled()) {
+          logger.debug("Authentication failed");
+        }
+        context.response()
+          .setStatusCode(401)
+          .putHeader(HttpHeaders.CONTENT_TYPE, HttpHeaders.TEXT_HTML)
+          .end("Unauthorized");
+      });
+
       return this;
     }
 
@@ -92,7 +112,15 @@ public class FrontEndVerticle extends AbstractVerticle {
 
       JWTAuth authProvider = JWTAuth.create(vertx, authConfig);
 
-      router.route("/api/*").handler(JWTAuthHandler.create(authProvider));
+      router.route("/api/*").handler(JWTAuthHandler.create(authProvider)).failureHandler(context -> {
+        if (logger.isDebugEnabled()) {
+          logger.debug("JWT token is invalid or has expired.");
+        }
+        context.response()
+          .setStatusCode(401)
+          .putHeader(HttpHeaders.CONTENT_TYPE, HttpHeaders.TEXT_HTML)
+          .end("Unauthorized");
+      });
       return this;
     }
 
@@ -114,7 +142,7 @@ public class FrontEndVerticle extends AbstractVerticle {
         if (res.failed()) {
           res.cause().printStackTrace();
         } else {
-          System.out.println("Server listening at: http://localhost:8080/");
+          logger.warn("Server listening at: http://localhost:8080/");
         }
       });
     }

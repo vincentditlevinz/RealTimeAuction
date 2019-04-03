@@ -18,4 +18,8 @@ public interface Util {
   static ZonedDateTime universalNow() {
     return ZonedDateTime.now(ZoneOffset.UTC);
   }
+
+  static long auctionValidityInMinutes() {
+    return 5;
+  }
 }

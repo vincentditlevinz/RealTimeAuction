@@ -33,7 +33,7 @@ public final class Auction implements Shareable, Comparable<Auction> {
    * @throws IllegalArgumentException if product is null or empty (should not happen)
    */
   public Auction(String product, BigDecimal firstPrice) {
-    this(product, firstPrice, Util.universalNow().plusMinutes(5));
+    this(product, firstPrice, Util.universalNow().plusMinutes(Util.auctionValidityInMinutes()));
   }
 
   /**
@@ -65,11 +65,11 @@ public final class Auction implements Shareable, Comparable<Auction> {
   /**
    * A full ctor that is used for {@link Shareable#copy()}
    *
-   * @param id
-   * @param product
-   * @param endingTime
-   * @param firstPrice
-   * @param bids
+   * @param id auction id
+   * @param product the product detail
+   * @param endingTime the auction's ending time
+   * @param firstPrice the first price
+   * @param bids a stack of bids
    */
   private Auction(String id, String product, ZonedDateTime endingTime, BigDecimal firstPrice, ArrayDeque<Bid> bids) {
     this.id = id;

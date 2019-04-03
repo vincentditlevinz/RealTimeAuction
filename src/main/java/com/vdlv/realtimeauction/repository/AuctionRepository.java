@@ -63,11 +63,12 @@ public class AuctionRepository {
   /**
    * Insert or override the auction (full replacement, the last win)
    *
-   * @param auction
-   * @return
+   * @param auction the auction to insert or override
+   * @return the auction (might be useful with certain types of repository that generates ids)
    */
   public Auction upsertAuction(Auction auction) {
-    return auctionStorage().put(auction.getId(), auction);
+    auctionStorage().put(auction.getId(), auction);
+    return auction;
   }
 
   /**
@@ -90,24 +91,30 @@ public class AuctionRepository {
   }
 
   /**
-   * Handle pagination
-   *
-   * @param result
-   * @param offset
-   * @param max
+   * Handle pagination (a sort is done during the process)
+   * @param all the complete list of results
+   * @param offset the offset from to start extraction
+   * @param max the number of items to extract
    * @return extracted results
    */
-  static List<Auction> extractResults(List<Auction> result, Integer offset, Integer max) {
-    int checkedMax = checkMax(max, result.size());
-    int checkedOffset = checkOffset(offset, checkedMax, result.size());
-    Collections.sort(result);
+  static List<Auction> extractResults(List<Auction> all, Integer offset, Integer max) {
+    int checkedMax = checkMax(max, all.size());
+    int checkedOffset = checkOffset(offset, checkedMax, all.size());
+    Collections.sort(all);
     int idEnd = checkedOffset + checkedMax;
-    if (idEnd > result.size()) {
-      idEnd = result.size();
+    if (idEnd > all.size()) {
+      idEnd = all.size();
     }
-    return result.subList(checkedOffset, idEnd);
+    return all.subList(checkedOffset, idEnd);
   }
 
+  /**
+   * Evaluates the max value against the list size.
+   *
+   * @param max      max item per page
+   * @param listSize the size of the whole result set
+   * @return the max value reevaluated
+   */
   static int checkMax(int max, int listSize) {
     if (max <= 0) {
       return 10 > listSize ? listSize : 10;
@@ -118,6 +125,12 @@ public class AuctionRepository {
     }
   }
 
+  /**
+   * @param offset the offset from which starting the extraction
+   * @param checkedMax max item per page
+   * @param listSize the size of the whole result set
+   * @return the offset value reevaluated
+   */
   static int checkOffset(int offset, int checkedMax, int listSize) {
     if (offset <= 0) {
       return 0;

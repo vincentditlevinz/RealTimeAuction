@@ -15,6 +15,13 @@ public class MainVerticle extends AbstractVerticle {
 
   @Override
   public void start() {
+    vertx.deployVerticle(AuctionManagementVerticle.class.getName(), res -> {
+      if (res.succeeded()) {
+        logger.info("AuctionManagementVerticle deployment id is: " + res.result());
+      } else {
+        logger.error("AuctionManagementVerticle deployment failed!");
+      }
+    });
     vertx.deployVerticle(FrontEndVerticle.class.getName(), res -> {
       if (res.succeeded()) {
         logger.info("FrontEndVerticle deployment id is: " + res.result());
