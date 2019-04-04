@@ -19,10 +19,7 @@ import io.vertx.ext.auth.shiro.ShiroAuthRealmType;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.api.validation.HTTPRequestValidationHandler;
 import io.vertx.ext.web.api.validation.ParameterType;
-import io.vertx.ext.web.handler.BodyHandler;
-import io.vertx.ext.web.handler.FaviconHandler;
-import io.vertx.ext.web.handler.JWTAuthHandler;
-import io.vertx.ext.web.handler.StaticHandler;
+import io.vertx.ext.web.handler.*;
 import xyz.jetdrone.vertx.spa.services.SPA;
 
 /**
@@ -36,6 +33,7 @@ public class FrontEndVerticle extends AbstractVerticle {
   @Override
   public void start() {
     final Router router = Router.router(vertx);
+    router.route().failureHandler(ErrorHandler.create());
 
     final Builder builder = new Builder(router);
     builder

@@ -22,4 +22,7 @@ public interface Util {
   static long auctionValidityInMinutes() {
     return 5;
   }
+
+  String BidsTopic = "bids";
+
 }

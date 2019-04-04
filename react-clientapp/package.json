@@ -14,7 +14,9 @@
     "react-router-dom": "^4.2.2",
     "react-scripts": "^1.1.5",
     "reactstrap": "^6.3.0",
-    "rimraf": "^2.6.2"
+    "rimraf": "^2.6.2",
+    "rx": "^4.1.0",
+    "vertx3-eventbus-client": "^3.7.0"
   },
   "devDependencies": {
     "ajv": "^6.0.0",

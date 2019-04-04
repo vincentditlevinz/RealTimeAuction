@@ -29,6 +29,13 @@ public class MainVerticle extends AbstractVerticle {
         logger.error("FrontEndVerticle deployment failed!");
       }
     });
+    vertx.deployVerticle(SockJSBridgeVerticle.class.getName(), res -> {
+      if (res.succeeded()) {
+        logger.info("SockJSBridgeVerticle deployment id is: " + res.result());
+      } else {
+        logger.error("SockJSBridgeVerticle deployment failed!");
+      }
+    });
   }
 }
 

@@ -1,13 +1,8 @@
-import React, { Component } from "react";
-import { Button, Form, FormGroup, Label, Input } from 'reactstrap';
-import {
-  Redirect
-} from 'react-router-dom'
-
-
+import React, {Component} from "react";
+import {Button, Form, FormGroup, Input, Label} from 'reactstrap';
+import {Redirect} from 'react-router-dom'
 /* We want to import our 'AuthenticationService' component in order to send a login request */
 import AuthenticationService from './AuthenticationService';
-
 
 
 export class Login extends Component {
@@ -20,7 +15,7 @@ export class Login extends Component {
     username: "",
     password: "",
     redirectToReferrer: false
-  }
+  };
 
   /* Fired off every time the use enters something into the input fields */
   handleChange = (e) => {
@@ -29,7 +24,7 @@ export class Login extends Component {
         [e.target.name]: e.target.value
       }
     )
-  }
+  };
 
   validateForm() {
     return this.state.username.length > 0 && this.state.password.length > 0;
@@ -45,14 +40,14 @@ export class Login extends Component {
         }))
       })
       .catch(err => {
-        console.log(err);
-        alert(err);
+        this.setState({err});
       })
-  }
+  };
 
   render() {
-    const { from } = this.props.location.state || { from: { pathname: '/' } }
-    const { redirectToReferrer } = this.state
+    if (this.state.err) throw this.state.err;
+    const {from} = this.props.location.state || {from: {pathname: '/'}};
+    const {redirectToReferrer} = this.state;
 
     if (redirectToReferrer === true) {
       return <Redirect to={from} />

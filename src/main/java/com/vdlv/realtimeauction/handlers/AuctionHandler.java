@@ -2,6 +2,7 @@ package com.vdlv.realtimeauction.handlers;
 
 import com.vdlv.realtimeauction.model.Auction;
 import com.vdlv.realtimeauction.model.Bid;
+import com.vdlv.realtimeauction.model.Util;
 import com.vdlv.realtimeauction.repository.AuctionRepository;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
@@ -91,6 +92,8 @@ public class AuctionHandler {
     boolean ok = repository.recordABid(auctionId, new Bid(context.user().principal().getString("sub"), BigDecimal.valueOf(bid.getDouble("price"))));
     if (ok) {
       Auction updatedAuction = repository.findAuctionById(auctionId).get();
+      // Publish to the event bus for web socket integration
+      context.vertx().eventBus().publish(Util.BidsTopic, convert(updatedAuction).encode());
       context.response()
         .putHeader(CONTENT_TYPE, createOptimized("application/json"))
         .setStatusCode(200)

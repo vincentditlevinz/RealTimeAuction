@@ -23,7 +23,7 @@ public class AuctionManagementVerticle extends AbstractVerticle {
 
   private static final Logger logger = LoggerFactory.getLogger(AuctionManagementVerticle.class);
   private final static List<String> catalog = asList("Google TV", "Honda Civic 1989", "100 pairs of socks", "Potatoes");
-  private final static List<BigDecimal> prices = asList(valueOf(1000), valueOf(2000), valueOf(100), valueOf(20));
+  private final static List<BigDecimal> prices = asList(valueOf(1000.00), valueOf(2000.00), valueOf(100.00), valueOf(20.00));
 
   @Override
   public void start() {

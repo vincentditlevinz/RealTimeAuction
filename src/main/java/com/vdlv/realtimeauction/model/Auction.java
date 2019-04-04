@@ -4,6 +4,7 @@ import io.vertx.core.shareddata.Shareable;
 import org.apache.commons.lang3.StringUtils;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.ZonedDateTime;
 import java.util.ArrayDeque;
 import java.util.Objects;
@@ -55,9 +56,9 @@ public final class Auction implements Shareable, Comparable<Auction> {
     }
     this.endingTime = endingTime;
     if (firstPrice == null || BigDecimal.ZERO.compareTo(firstPrice) == 1) {
-      this.firstPrice = BigDecimal.ZERO;
+      this.firstPrice = BigDecimal.ZERO.setScale(2, RoundingMode.CEILING);
     } else {
-      this.firstPrice = firstPrice;
+      this.firstPrice = firstPrice.setScale(2, RoundingMode.CEILING);
     }
     this.bids = new ArrayDeque<>();
   }

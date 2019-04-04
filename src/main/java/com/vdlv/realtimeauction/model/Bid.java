@@ -4,7 +4,7 @@ import io.vertx.core.shareddata.Shareable;
 import org.apache.commons.lang3.StringUtils;
 
 import java.math.BigDecimal;
-import java.time.ZoneOffset;
+import java.math.RoundingMode;
 import java.time.ZonedDateTime;
 import java.util.Objects;
 
@@ -32,12 +32,11 @@ public final class Bid implements Shareable {
     this.buyer = buyer;
 
     if (price == null || BigDecimal.ZERO.compareTo(price) == 1) {
-      this.price = BigDecimal.ZERO;
+      this.price = BigDecimal.ZERO.setScale(2, RoundingMode.CEILING);
     } else {
-      this.price = price;
+      this.price = price.setScale(2, RoundingMode.CEILING);
     }
-
-    this.time = ZonedDateTime.now(ZoneOffset.UTC);
+    this.time = Util.universalNow();
   }
 
   /**
