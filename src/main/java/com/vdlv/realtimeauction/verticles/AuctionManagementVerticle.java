@@ -41,6 +41,8 @@ public class AuctionManagementVerticle extends AbstractVerticle {
       Auction auction = repository.upsertAuction(new Auction(catalog.get(i), prices.get(i)));
       logger.info("Inserting auction: " + auction);
     }
+    Auction auction = repository.upsertAuction(new Auction(catalog.get(0), prices.get(0), Util.universalNow()));
+    logger.info("Inserting a closed auction: " + auction);
   }
 }
 

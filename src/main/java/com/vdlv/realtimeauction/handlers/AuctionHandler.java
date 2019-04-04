@@ -3,6 +3,7 @@ package com.vdlv.realtimeauction.handlers;
 import com.vdlv.realtimeauction.model.Auction;
 import com.vdlv.realtimeauction.model.Bid;
 import com.vdlv.realtimeauction.repository.AuctionRepository;
+import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
@@ -87,12 +88,27 @@ public class AuctionHandler {
       logger.debug("User: " + context.user().principal().getString("sub"));
     }
 
-    repository.recordABid(auctionId, new Bid(context.user().principal().getString("sub"), BigDecimal.valueOf(bid.getDouble("price"))));
-    Auction updatedAuction = repository.findAuctionById(auctionId).get();
-    context.response()
-      .putHeader(CONTENT_TYPE, createOptimized("application/json"))
-      .setStatusCode(200)
-      .end(convert(updatedAuction).encode());
+    boolean ok = repository.recordABid(auctionId, new Bid(context.user().principal().getString("sub"), BigDecimal.valueOf(bid.getDouble("price"))));
+    if (ok) {
+      Auction updatedAuction = repository.findAuctionById(auctionId).get();
+      context.response()
+        .putHeader(CONTENT_TYPE, createOptimized("application/json"))
+        .setStatusCode(200)
+        .end(convert(updatedAuction).encode());
+    } else {
+      JsonObject message = new JsonObject().put("type", "BidException");
+      Auction targetedAuction = repository.findAuctionById(auctionId).get();
+
+      if (targetedAuction.isClosed()) {
+        message.put("message", "Sorry, the auction is closed for this product");
+      } else {
+        message.put("message", "Sorry, your offer is below the current product price");
+      }
+      context.response()
+        .putHeader(HttpHeaders.CONTENT_TYPE, createOptimized("application/json"))
+        .setStatusCode(422)
+        .end(message.encodePrettily());
+    }
   }
 
   /**

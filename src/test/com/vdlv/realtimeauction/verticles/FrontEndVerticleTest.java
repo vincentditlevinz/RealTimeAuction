@@ -130,7 +130,7 @@ class FrontEndVerticleTest {
       .send(testContext.succeeding(response -> testContext.verify(() -> {
         assertThat(response.statusCode(), is(200));
         JsonArray result = response.bodyAsJsonArray();
-        assertThat(result.size(), is(4));
+        assertThat(result.size(), is(5));
         logger.info("Result from http request:" + result);
         testContext.completeNow();
       })));
@@ -165,13 +165,13 @@ class FrontEndVerticleTest {
       .send(testContext.succeeding(response -> testContext.verify(() -> {
         assertThat(response.statusCode(), is(200));
         JsonArray result = response.bodyAsJsonArray();
-        assertThat(result.isEmpty(), is(true));
+        assertThat(result.size(), is(1));
         testContext.completeNow();
       })));
   }
 
   @Test
-  void bidForAnAuction(Vertx vertx, VertxTestContext testContext) {
+  void bidForAnAuctionHappyPath(Vertx vertx, VertxTestContext testContext) {
     String token = authenticate("martin", "test123");
     JsonArray auctions = auctions(false, token);
     JsonObject auction = auctions.getJsonObject(0);
@@ -184,6 +184,40 @@ class FrontEndVerticleTest {
         JsonObject body = response.bodyAsJsonObject();
         assertThat(body.getDouble("price"), is(10000.0));
         assertThat(body.getString("buyer"), is("martin"));
+        testContext.completeNow();
+      })));
+  }
+
+  @Test
+  void bidForAnAuctionWithATooSmallPrice(Vertx vertx, VertxTestContext testContext) {
+    String token = authenticate("martin", "test123");
+    JsonArray auctions = auctions(false, token);
+    JsonObject auction = auctions.getJsonObject(0);
+
+    WebClient webClient = WebClient.create(vertx);
+    webClient.patch(8080, "localhost", "/api/bid/" + auction.getString("id"))
+      .bearerTokenAuthentication(token)
+      .sendJsonObject(new JsonObject().put("price", (auction.getDouble("price") - 1.0)), testContext.succeeding(response -> testContext.verify(() -> {
+        assertThat(response.statusCode(), is(422));
+        JsonObject body = response.bodyAsJsonObject();
+        assertThat(body.getString("message"), is("Sorry, your offer is below the current product price"));
+        testContext.completeNow();
+      })));
+  }
+
+  @Test
+  void bidForAClosedAuction(Vertx vertx, VertxTestContext testContext) {
+    String token = authenticate("martin", "test123");
+    JsonArray auctions = auctions(true, token);
+    JsonObject auction = auctions.getJsonObject(0);
+
+    WebClient webClient = WebClient.create(vertx);
+    webClient.patch(8080, "localhost", "/api/bid/" + auction.getString("id"))
+      .bearerTokenAuthentication(token)
+      .sendJsonObject(new JsonObject().put("price", 10000.0), testContext.succeeding(response -> testContext.verify(() -> {
+        assertThat(response.statusCode(), is(422));
+        JsonObject body = response.bodyAsJsonObject();
+        assertThat(body.getString("message"), is("Sorry, the auction is closed for this product"));
         testContext.completeNow();
       })));
   }
