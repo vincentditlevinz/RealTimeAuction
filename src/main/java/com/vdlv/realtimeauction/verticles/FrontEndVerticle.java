@@ -159,12 +159,18 @@ public class FrontEndVerticle extends AbstractVerticle {
       return this;
     }
 
+    private int resolvePort() {
+
+      return Integer.getInteger("http.port", 8080);
+    }
+
     void startVertxServer() {
-      vertx.createHttpServer().requestHandler(router).listen(8080, res -> {
+      int port = resolvePort();
+      vertx.createHttpServer().requestHandler(router).listen(port, res -> {
         if (res.failed()) {
           res.cause().printStackTrace();
         } else {
-          logger.warn("Server listening at: http://localhost:8080/");
+          logger.warn("Server listening at: http://localhost:" + port + "/");
         }
       });
     }

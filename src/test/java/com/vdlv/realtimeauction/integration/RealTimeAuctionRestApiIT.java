@@ -1,18 +1,17 @@
 package com.vdlv.realtimeauction.integration;
 
-import com.vdlv.realtimeauction.verticles.MainVerticle;
 import io.github.glytching.junit.extension.system.SystemProperty;
 import io.github.glytching.junit.extension.system.SystemPropertyExtension;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
-import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.junit5.VertxExtension;
-import io.vertx.junit5.VertxTestContext;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import static io.restassured.RestAssured.given;
@@ -20,32 +19,15 @@ import static io.restassured.RestAssured.given;
 
 @ExtendWith({VertxExtension.class, SystemPropertyExtension.class})
 @SystemProperty(name = "vertx.environment", value = "INT")
-@Disabled("TODO vim implements real integration tests")
-class RealTimeAuctionRestApiTest {
-  private final static Logger logger = LoggerFactory.getLogger(RealTimeAuctionRestApiTest.class.getName());
+class RealTimeAuctionRestApiIT {
+  private final static Logger logger = LoggerFactory.getLogger(RealTimeAuctionRestApiIT.class.getName());
 
   @BeforeAll
   public static void configureRestAssured() {
     RestAssured.baseURI = "http://localhost";
     RestAssured.port = Integer.getInteger("http.port", 8080);
-  }
-
-  @AfterAll
-  public static void unconfigureRestAssured() {
-    RestAssured.reset();
-  }
-
-  @BeforeEach
-  void init(Vertx vertx, VertxTestContext testContext) {
-    vertx.deployVerticle(new MainVerticle(), testContext.succeeding(ar -> {
-      wait(50);// ensure server is really really started (we had sometimes connection refused messages)
-      testContext.completeNow();
-    }));
-  }
-
-  @AfterEach
-  public void tearDown(Vertx vertx, VertxTestContext context) {
-    vertx.close(context.completing());
+    logger.warn("Restassured is executing on " + RestAssured.baseURI + ":" + RestAssured.port);
+    wait(500);
   }
 
   /**
@@ -53,12 +35,17 @@ class RealTimeAuctionRestApiTest {
    *
    * @param millis pause duration in millis
    */
-  private void wait(int millis) {
+  private static void wait(int millis) {
     try {
       Thread.sleep(millis);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
     }
+  }
+
+  @AfterAll
+  public static void unconfigureRestAssured() {
+    RestAssured.reset();
   }
 
   /**
