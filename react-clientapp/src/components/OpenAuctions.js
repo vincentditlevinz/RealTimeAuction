@@ -4,7 +4,9 @@ import AuthenticationService from './AuthenticationService';
 import EventBus from 'vertx3-eventbus-client';
 import Rx from 'rx';
 
-const eb = new EventBus('{window.location.host}/eventbus');
+const url = window.location.protocol + '//' + window.location.host + '/eventbus';
+console.log(url);
+const eb = new EventBus(url);
 eb.enableReconnect(true);
 
 

@@ -241,7 +241,7 @@
                       dir="${project.build.directory}"
                       spawn="false">
                   <arg value="-c"/>
-                  <!--<arg value="ps ax | grep -Ei '\-jar\s+${project.artifactId}-${project.version}' | awk 'NR==1{print $1}' | xargs kill -SIGTERM"/>-->
+                  <arg value="ps ax | grep -Ei '\-jar\s+${project.artifactId}-${project.version}' | awk 'NR==1{print $1}' | xargs kill -SIGTERM"/>
                 </exec>
               </target>
             </configuration>

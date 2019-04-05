@@ -42,6 +42,7 @@ public class FrontEndVerticle extends AbstractVerticle {
 
     final Builder builder = new Builder(router);
     builder
+      .setUpEventBusBridge()
       .setupAuthenticationEndpoint()
       .protectAPIEndpoints();
 
@@ -68,7 +69,6 @@ public class FrontEndVerticle extends AbstractVerticle {
       .failureHandler(ValidationFailureHandler.create());
 
     builder
-      .setUpEventBusBridge()
       .publishSPAApplication()
       .setupDebuggingTools()
       .startVertxServer();
@@ -77,7 +77,7 @@ public class FrontEndVerticle extends AbstractVerticle {
   @Override
   public void stop() {
     // will stop any SPA running processes in DEV mode
-    //SPA.stop();
+    SPA.stop();
   }
 
   /**
@@ -160,7 +160,6 @@ public class FrontEndVerticle extends AbstractVerticle {
     }
 
     private int resolvePort() {
-
       return Integer.getInteger("http.port", 8080);
     }
 
