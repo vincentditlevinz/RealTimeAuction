@@ -11,7 +11,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
-import static java.math.BigDecimal.valueOf;
+import static com.vdlv.realtimeauction.model.Util.*;
 import static java.util.Arrays.asList;
 
 /**
@@ -23,7 +23,7 @@ public class AuctionManagementVerticle extends AbstractVerticle {
 
   private static final Logger logger = LoggerFactory.getLogger(AuctionManagementVerticle.class);
   private final static List<String> catalog = asList("Google TV", "Honda Civic 1989", "100 pairs of socks", "Potatoes");
-  private final static List<BigDecimal> prices = asList(valueOf(1000.00), valueOf(2000.00), valueOf(100.00), valueOf(20.00));
+  private final static List<BigDecimal> prices = asList(THOUSAND, TWO_THOUSAND, ONE_HUNDRED, TWENTY);
 
   @Override
   public void start() {

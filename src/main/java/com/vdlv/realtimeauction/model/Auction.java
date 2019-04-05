@@ -11,6 +11,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
+import static com.vdlv.realtimeauction.model.Util.ZERO;
+
 /**
  * Represents an auction in this system.
  */
@@ -55,8 +57,8 @@ public final class Auction implements Shareable, Comparable<Auction> {
       throw new IllegalArgumentException(("Product description should not ne null or empty"));
     }
     this.endingTime = endingTime;
-    if (firstPrice == null || BigDecimal.ZERO.compareTo(firstPrice) == 1) {
-      this.firstPrice = BigDecimal.ZERO.setScale(2, RoundingMode.CEILING);
+    if (firstPrice == null || ZERO.compareTo(firstPrice) == 1) {
+      this.firstPrice = ZERO;
     } else {
       this.firstPrice = firstPrice.setScale(2, RoundingMode.CEILING);
     }

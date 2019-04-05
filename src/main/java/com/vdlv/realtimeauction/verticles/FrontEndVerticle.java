@@ -3,6 +3,7 @@ package com.vdlv.realtimeauction.verticles;
 import com.vdlv.realtimeauction.handlers.AuctionHandler;
 import com.vdlv.realtimeauction.handlers.LoginHandler;
 import com.vdlv.realtimeauction.handlers.ValidationFailureHandler;
+import com.vdlv.realtimeauction.model.Util;
 import com.vdlv.realtimeauction.repository.AuctionRepository;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.http.HttpHeaders;
@@ -16,10 +17,14 @@ import io.vertx.ext.auth.jwt.JWTAuthOptions;
 import io.vertx.ext.auth.shiro.ShiroAuth;
 import io.vertx.ext.auth.shiro.ShiroAuthOptions;
 import io.vertx.ext.auth.shiro.ShiroAuthRealmType;
+import io.vertx.ext.bridge.BridgeEventType;
+import io.vertx.ext.bridge.PermittedOptions;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.api.validation.HTTPRequestValidationHandler;
 import io.vertx.ext.web.api.validation.ParameterType;
 import io.vertx.ext.web.handler.*;
+import io.vertx.ext.web.handler.sockjs.BridgeOptions;
+import io.vertx.ext.web.handler.sockjs.SockJSHandler;
 import xyz.jetdrone.vertx.spa.services.SPA;
 
 /**
@@ -63,6 +68,7 @@ public class FrontEndVerticle extends AbstractVerticle {
       .failureHandler(ValidationFailureHandler.create());
 
     builder
+      .setUpEventBusBridge()
       .publishSPAApplication()
       .setupDebuggingTools()
       .startVertxServer();
@@ -133,6 +139,23 @@ public class FrontEndVerticle extends AbstractVerticle {
     Builder setupDebuggingTools() {
       // will redirect to ng-serve while in development time
       router.route().handler(SPA.serve("react-clientapp", 7979));
+      return this;
+    }
+
+    Builder setUpEventBusBridge() {
+      BridgeOptions options = new BridgeOptions()
+        .addOutboundPermitted(new PermittedOptions().setAddress(Util.BidsTopic));
+      SockJSHandler eventBusHandler = SockJSHandler.create(vertx).bridge(options, event -> {
+        if (event.type() == BridgeEventType.SOCKET_CREATED) {
+          logger.info("A socket was created listening to auction topics");
+        }
+      /*if (event.type() == BridgeEventType.PUBLISH || event.type() == BridgeEventType.SEND) {
+          event.complete(false);// reject events from the client (client listen to events coming from server)
+          return;
+      }*/
+        event.complete(true);
+      });
+      router.route("/eventbus/*").handler(eventBusHandler);
       return this;
     }
 

@@ -8,6 +8,8 @@ import java.math.RoundingMode;
 import java.time.ZonedDateTime;
 import java.util.Objects;
 
+import static com.vdlv.realtimeauction.model.Util.ZERO;
+
 /**
  * Represents a bid. It should be associated to an auction (although we haven't enforced it yet through modelling)
  */
@@ -31,8 +33,8 @@ public final class Bid implements Shareable {
     }
     this.buyer = buyer;
 
-    if (price == null || BigDecimal.ZERO.compareTo(price) == 1) {
-      this.price = BigDecimal.ZERO.setScale(2, RoundingMode.CEILING);
+    if (price == null || ZERO.compareTo(price) == 1) {
+      this.price = ZERO;
     } else {
       this.price = price.setScale(2, RoundingMode.CEILING);
     }
