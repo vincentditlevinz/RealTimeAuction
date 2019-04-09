@@ -4,7 +4,7 @@ import AuthenticationService from './AuthenticationService';
 import EventBus from 'vertx3-eventbus-client';
 import Rx from 'rx';
 
-const url = window.location.protocol + '//' + window.location.hostname + ':' + 7878 + '/eventbus';
+const url = window.location.protocol + '//' + window.location.host + '/eventbus';
 console.log('SockJS listening on:' +  url);
 
 
