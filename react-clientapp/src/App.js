@@ -6,6 +6,7 @@ import {Home} from './components/Home';
 import {Login} from './components/Login';
 import AuthenticationService from "./components/AuthenticationService";
 import {DashboardAuctions} from "./components/DashboardAuctions";
+import {ErrorHandler} from "./components/ErrorHandler";
 
 const Auth = new AuthenticationService();
 
@@ -39,7 +40,9 @@ class App extends Component {
       <Layout>
         <AuthButton/>
         <Route exact path='/' component={Home} />
+        <ErrorHandler>
         <Route path="/login" component={Login}/>
+        </ErrorHandler>
         <PrivateRoute path='/auctions' component={DashboardAuctions}/>
       </Layout>
     );

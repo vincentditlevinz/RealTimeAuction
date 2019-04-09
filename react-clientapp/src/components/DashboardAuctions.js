@@ -1,6 +1,7 @@
 import React, {Component} from 'react';
 import {OpenAuctions} from "./OpenAuctions";
 import {ClosedAuctions} from "./ClosedAuctions";
+import {ErrorHandler} from "./ErrorHandler";
 
 export class DashboardAuctions extends Component {
   static displayName = DashboardAuctions.name;
@@ -8,9 +9,13 @@ export class DashboardAuctions extends Component {
   render() {
     return (
       <div>
-        <OpenAuctions/>
+        <ErrorHandler>
+          <OpenAuctions/>
+        </ErrorHandler>
         <br/>
-        <ClosedAuctions/>
+        <ErrorHandler>
+          <ClosedAuctions/>
+        </ErrorHandler>
       </div>
     );
   }

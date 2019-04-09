@@ -17,6 +17,16 @@ export class Login extends Component {
     redirectToReferrer: false
   };
 
+
+  componentDidCatch(error, errorInfo) {
+    this.setState( {
+      username: "",
+      password: "",
+      redirectToReferrer: false,
+      err: undefined
+    });
+  }
+
   /* Fired off every time the use enters something into the input fields */
   handleChange = (e) => {
     this.setState(
@@ -45,7 +55,9 @@ export class Login extends Component {
   };
 
   render() {
-    if (this.state.err) throw this.state.err;
+    if (this.state.err) {
+      throw this.state.err;
+    }
     const {from} = this.props.location.state || {from: {pathname: '/'}};
     const {redirectToReferrer} = this.state;
 

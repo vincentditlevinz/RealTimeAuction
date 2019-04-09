@@ -1,5 +1,6 @@
 import React, {Component} from 'react';
-import {Alert} from 'reactstrap';
+import { Toast, ToastBody, ToastHeader } from 'reactstrap';
+import {Col, Container, Row} from "reactstrap/es";
 
 export class ErrorHandler extends Component {
   constructor(props) {
@@ -16,17 +17,30 @@ export class ErrorHandler extends Component {
   }
 
   onDismiss = () => {
-    this.setState({visible: false});
+    this.setState({visible: false, errorInfo:undefined});
   };
 
   render() {
     if (this.state.errorInfo) {
-      return (
+     return (
         <div>
-          <Alert color="danger" isOpen={this.state.visible} toggle={this.onDismiss}>
-            {this.state.error && this.state.error.toString()}
-          </Alert>
+          <Container>
+            <Row>
+              <Col xs="6" sm="4"></Col>
+              <Col xs="6" sm="4"></Col>
+              <Col sm="4"><Toast color="primary" isOpen={this.state.visible} >
+                <ToastHeader toggle={this.onDismiss}>
+                  <b>Problem</b>
+                </ToastHeader>
+                <ToastBody>
+                  {this.state.error && this.state.error.toString()}
+                </ToastBody>
+              </Toast></Col>
+            </Row>
+
+          </Container>
         </div>
+
       );
     }
     // Render children if there's no error
