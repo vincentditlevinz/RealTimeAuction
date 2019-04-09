@@ -2,6 +2,8 @@ package com.vdlv.realtimeauction.repository;
 
 import com.vdlv.realtimeauction.model.Auction;
 import com.vdlv.realtimeauction.model.Bid;
+import io.github.glytching.junit.extension.system.SystemProperty;
+import io.github.glytching.junit.extension.system.SystemPropertyExtension;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -18,7 +20,8 @@ import static org.exparity.hamcrest.date.ZonedDateTimeMatchers.after;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-@ExtendWith(VertxExtension.class)
+@ExtendWith({VertxExtension.class, SystemPropertyExtension.class})
+@SystemProperty(name = "vertx.environment", value = "JUNIT")
 class AuctionRepositoryTest {
 
   private static final Auction CARROTS_AND_POTATOES = new Auction("Carrots and potatoes", FIFTEEN);
@@ -67,7 +70,7 @@ class AuctionRepositoryTest {
     Auction shortTermAuction = new Auction("Mercedes Class A", THOUSAND, universalNow().plus(10, MILLIS));
     shortTermAuction.addBid(new Bid(BUYER, TWO_THOUSAND));
     repo.upsertAuction(shortTermAuction);
-    Thread.sleep(10);
+    Thread.sleep(15);
     repo.upsertAuction(CARROTS_AND_POTATOES);
     repo.upsertAuction(new Auction("Other one", FIFTEEN));
     assertThat(repo.findAuctions(0, 10).size(), is(3));

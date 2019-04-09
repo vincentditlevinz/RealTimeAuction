@@ -4,20 +4,30 @@ import AuthenticationService from './AuthenticationService';
 import EventBus from 'vertx3-eventbus-client';
 import Rx from 'rx';
 
-const url = window.location.protocol + '//' + window.location.host + '/eventbus';
-console.log(url);
-const eb = new EventBus(url);
-eb.enableReconnect(true);
+const url = window.location.protocol + '//' + window.location.hostname + ':' + 7878 + '/eventbus';
+console.log('SockJS listening on:' +  url);
 
 
 export class OpenAuctions extends Component {
   static displayName = OpenAuctions.name;
   Auth = new AuthenticationService();
-
+  eb;
 
   constructor(props) {
     super(props);
     this.state = {auctions: [], loading: true};
+  }
+
+
+  componentDidMount() {
+    this.registerEventBus(url);
+    this.loadData();
+  }
+
+  /**
+   * Load open auctions from REST API
+   */
+  loadData() {
     try {
       this.Auth.fetch('api/auctions?closed=false&offset=0&max=20')
         .then(response => response)
@@ -25,16 +35,20 @@ export class OpenAuctions extends Component {
           this.setState({auctions: data, loading: false});
         })
     } catch (err) {
-      this.state = {err, auctions: [], loading: false};
+      this.setState({err, auctions: [], loading: false});
     }
   }
 
-
-  UNSAFE_componentWillMount() {
-    eb.onopen = () => {
+  /**
+   * Register the event bus for listening to bids from the server
+   */
+  registerEventBus(url) {
+    this.eb = new EventBus(url);
+    this.eb.onopen = () => {
+      this.eb.enableReconnect(true);
       Rx.Observable.create((observer) => {
         try {
-          eb.registerHandler("bids", (err, msg) => {
+          this.eb.registerHandler("bids", (err, msg) => {
             observer.next(msg.body);
           })
         } catch (err) {
@@ -52,6 +66,10 @@ export class OpenAuctions extends Component {
     };
   }
 
+  /**
+   * perform a bid for the provided auction
+   * @param auction provided
+   */
   bid = (auction) => {
     const price = auction.price * 1.1;
     const body = JSON.stringify({
@@ -68,6 +86,11 @@ export class OpenAuctions extends Component {
   };
 
 
+  /**
+   * Render the open auctions table
+   * @param auctions
+   * @returns {*}
+   */
   renderAuctionsTable(auctions) {
     if (this.state.err) throw this.state.err;
     return (
@@ -96,6 +119,10 @@ export class OpenAuctions extends Component {
     );
   }
 
+  /**
+   * Renders the component
+   * @returns {*}
+   */
   render() {
     let contents = this.state.loading
       ? <p><em>Loading...</em></p>
