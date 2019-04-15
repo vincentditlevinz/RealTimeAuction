@@ -1,6 +1,6 @@
 import React from 'react';
 import {mount} from 'enzyme';
-import ErrorHandler from './ErrorHandler';
+import {ErrorHandler} from './ErrorHandler';
 
 const Something = () => null;
 
