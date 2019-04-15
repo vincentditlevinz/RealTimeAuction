@@ -1,8 +1,7 @@
 import React, {Component} from 'react';
-import { Toast, ToastBody, ToastHeader } from 'reactstrap';
-import {Col, Container, Row} from "reactstrap/es";
+import {Col, Container, Row, Toast, ToastBody, ToastHeader} from 'reactstrap';
 
-export class ErrorHandler extends Component {
+export default class ErrorHandler extends Component {
   constructor(props) {
     super(props);
     this.state = {error: null, errorInfo: null, visible: false};
