@@ -24,15 +24,22 @@ export class OpenAuctions extends Component {
     this.loadData();
   }
 
+  fetch(url) {
+    return this.Auth.fetch(url);
+  }
+
   /**
    * Load open auctions from REST API
    */
   loadData() {
     try {
-      this.Auth.fetch('api/auctions?closed=false&offset=0&max=20')
+      this.fetch('api/auctions?closed=false&offset=0&max=20')
         .then(response => response)
         .then(data => {
           this.setState({auctions: data, loading: false});
+        })
+        .catch(err => {
+          this.setState({err, auctions: [], loading: false});
         })
     } catch (err) {
       this.setState({err, auctions: [], loading: false});
@@ -67,7 +74,9 @@ export class OpenAuctions extends Component {
   }
 
   /**
-   * perform a bid for the provided auction
+   * Perform a bid for the provided auction
+   * Beware that the bid function definition is slightly different from a class method. This is a trick to avoid the explicit binding for React
+   * e.g.: this.bid = this.bid.bind(this); to call in the component ctor
    * @param auction provided
    */
   bid = (auction) => {
@@ -76,11 +85,11 @@ export class OpenAuctions extends Component {
       price
     });
 
-    this.Auth.fetch('api/bid/' + auction.id, {
+    this.fetch('api/bid/' + auction.id, {
       method: 'PATCH', body: body
     })
       .then(response => {
-        response;
+        return response;
       })
       .catch((err) => this.setState({err}))
   };

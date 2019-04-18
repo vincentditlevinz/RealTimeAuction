@@ -27,7 +27,7 @@ export class Login extends Component {
     });
   }
 
-  /* Fired off every time the use enters something into the input fields */
+  /* Fired off every time the user enters something into the input fields */
   handleChange = (e) => {
     this.setState(
       {
@@ -68,7 +68,7 @@ export class Login extends Component {
       <React.Fragment>
         <Form inline onSubmit={this.handleFormSubmit}>
           <FormGroup className="mb-2 mr-sm-2 mb-sm-0">
-            <Label for="exampleEmail" className="mr-sm-2">Email</Label>
+            <Label for="username" className="mr-sm-2">User name</Label>
             <Input type="text" name="username" id="username" value={this.state.username}
                    onChange={this.handleChange} />
           </FormGroup>

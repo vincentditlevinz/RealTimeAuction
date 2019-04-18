@@ -3,15 +3,19 @@ import {Table} from 'reactstrap';
 import AuthenticationService from './AuthenticationService';
 
 
+
 export class ClosedAuctions extends Component {
   static displayName = ClosedAuctions.name;
   Auth = new AuthenticationService();
-
 
   constructor(props) {
     super(props);
     this.state = {auctions: [], loading: true};
 
+  }
+
+  fetch(url) {
+    return this.Auth.fetch(url);
   }
 
   componentDidMount() {
@@ -23,12 +27,16 @@ export class ClosedAuctions extends Component {
    */
   loadData() {
     try {
-      this.Auth.fetch('api/auctions?closed=true&offset=0&max=20')
+      this.fetch('api/auctions?closed=true&offset=0&max=20')
         .then(response => response)
         .then(data => {
           this.setState({auctions: data, loading: false});
         })
+        .catch(err => {
+          this.setState({err, auctions: [], loading: false});
+        })
     } catch (err) {
+      console.log(err);
       this.setState({err, auctions: [], loading: false});
     }
   }
