@@ -40,10 +40,18 @@ export class Login extends Component {
     return this.state.username.length > 0 && this.state.password.length > 0;
   }
 
+  authenticate(username, password) {
+    return this.Auth.login(username, password);
+  }
+
+  redirectTo(from) {
+    return <Redirect to={from}/>;
+  }
+
   handleFormSubmit = (e) => {
     e.preventDefault();
     /* Here is where all the login logic will go. Upon clicking the login button, we would like to utilize a login method that will send our entered credentials over to the server for verification. Once verified, it should store your token and send you to the protected route. */
-    this.Auth.login(this.state.username, this.state.password)
+    this.authenticate(this.state.username, this.state.password)
       .then(() => {
         this.setState(() => ({
           redirectToReferrer: true
@@ -56,13 +64,13 @@ export class Login extends Component {
 
   render() {
     if (this.state.err) {
-      throw this.state.err;
+      this.onFailure(this.state.err);
     }
-    const {from} = this.props.location.state || {from: {pathname: '/'}};
+    const {from} = (this.props.location && this.props.location.state) || {from: {pathname: '/'}};
     const {redirectToReferrer} = this.state;
 
     if (redirectToReferrer === true) {
-      return <Redirect to={from} />
+      return this.redirectTo(from);
     }
     return (
       <React.Fragment>
@@ -84,4 +92,7 @@ export class Login extends Component {
     );
   }
 
+  onFailure(err) {
+    throw err;
+  }
 }
