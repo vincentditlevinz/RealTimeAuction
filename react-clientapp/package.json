@@ -30,7 +30,10 @@
     "eslint-plugin-flowtype": "^2.50.3",
     "eslint-plugin-import": "^2.14.0",
     "eslint-plugin-jsx-a11y": "^5.1.1",
-    "eslint-plugin-react": "^7.11.1"
+    "eslint-plugin-react": "^7.11.1",
+    "jest-fetch-mock": "^2.1.2",
+    "njwt": "^1.0.0",
+    "secure-random": "^1.1.1"
   },
   "eslintConfig": {
     "extends": "react-app"
