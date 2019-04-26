@@ -14,8 +14,8 @@ export class ClosedAuctions extends Component {
 
   }
 
-  fetch(url) {
-    return this.Auth.fetch(url);
+  fetch(url, options) {
+    return this.Auth.fetch(url, options);
   }
 
   componentDidMount() {

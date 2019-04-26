@@ -24,8 +24,8 @@ export class OpenAuctions extends Component {
     this.loadData();
   }
 
-  fetch(url) {
-    return this.Auth.fetch(url);
+  fetch(url, options) {
+    return this.Auth.fetch(url, options);
   }
 
   /**
